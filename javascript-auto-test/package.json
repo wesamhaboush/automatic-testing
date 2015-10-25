@@ -1,0 +1,46 @@
+{
+  "name": "javascript-mutation-testing",
+  "version": "1.0.0",
+  "description": "trying mutation testing with javascript",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "blanket": {
+      "pattern": "src",
+      "data-cover-never": "node_modules"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wesamhaboush/mutation-testing.git"
+  },
+  "keywords": [
+    "mutation",
+    "testing",
+    "javascript",
+    "nodejs",
+    "node",
+    "unit",
+    "testing",
+    "unit",
+    "test"
+  ],
+  "author": "wesam.haboush",
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/wesamhaboush/mutation-testing/issues"
+  },
+  "homepage": "https://github.com/wesamhaboush/mutation-testing#readme",
+  "dependencies": {
+    "conditional": "^5.3.0"
+  },
+  "devDependencies": {
+    "blanket": "^1.1.7",
+    "expectations": "^0.5.2",
+    "grunt": "^0.4.5",
+    "grunt-mocha-test": "^0.12.7",
+    "grunt-mutation-testing": "^1.3.0",
+    "karma": "^0.13.11",
+    "mocha": "^2.3.3"
+  }
+}
