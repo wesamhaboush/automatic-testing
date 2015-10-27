@@ -4,7 +4,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-
 public class AccountTest {
     @Test(expected = IllegalArgumentException.class)
     public void should_not_be_able_to_create_account_with_too_short_name(){
@@ -71,6 +70,4 @@ public class AccountTest {
 
         assertEquals(2.0, account.getBalance(), 0.01);
     }
-
-
 }
