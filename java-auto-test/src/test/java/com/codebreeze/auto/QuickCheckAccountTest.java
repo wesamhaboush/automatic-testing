@@ -5,64 +5,114 @@ import com.pholser.junit.quickcheck.From;
 import com.pholser.junit.quickcheck.generator.GenerationStatus;
 import com.pholser.junit.quickcheck.generator.Generator;
 import com.pholser.junit.quickcheck.random.SourceOfRandomness;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.junit.Test;
+import org.junit.Rule;
 import org.junit.contrib.theories.Theories;
 import org.junit.contrib.theories.Theory;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
 
 @RunWith(Theories.class)
 public class QuickCheckAccountTest {
-    @Test(expected = IllegalArgumentException.class)
-    public void should_not_be_able_to_create_account_with_too_short_name(){
-        new Account("a", 6.0);
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @Theory
+    public void should_not_be_able_to_create_account_with_6_or_fewer_letters_name(
+            @ForAll
+            @From(InvalidUsernameGenerator.class)
+            String username) {
+        //given
+        assumeThat(StringUtils.length(username), lessThanOrEqualTo(6));
+
+        //when
+        exception.expect(username == null ? NullPointerException.class : IllegalArgumentException.class);
+        new Account(username, 50.0);
+
+        //then
+        fail("should have never been here");
     }
 
-    @Test(expected = NullPointerException.class)
-    public void should_not_be_able_to_create_account_with_no_name(){
-        new Account(null, 6.0);
+    @Theory
+    public void should_be_able_to_create_account_with_valid_name(
+            @ForAll @From(UsernameGenerator.class)
+            String username) {
+        //given
+        assumeThat(username.length(), greaterThan(6));
+
+        //when
+        final Account account = new Account(username, 50.0);
+
+
+        //then
+        assertEquals(username, account.getUsername());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void should_not_be_able_to_create_account_with_6_letters_name(){
-        new Account("123456", 6.0);
+    @Theory
+    public void should_not_be_able_to_create_account_with_little_money(
+            @ForAll
+            @From(InvalidBalanceGenerator.class)
+            double initialBalance) {
+        //given
+        assumeThat(initialBalance, greaterThanOrEqualTo(0.0));
+        assumeThat(initialBalance, lessThanOrEqualTo(5.0));
+
+        //when
+        exception.expect(IllegalArgumentException.class);
+        new Account(randomAlphanumeric(7), initialBalance);
+
+        //then
+        fail("should have never been here");
     }
 
-    @Test
-    public void should_be_able_to_create_account_with_valid_name(){
-        final Account account = new Account("willbe7", 6.0);
-        assertEquals("willbe7", account.getUsername());
+    @Theory
+    public void should_not_be_able_to_deposit_more_than_or_equal_to_max(
+            @ForAll
+            @From(InvalidDepositTransactionGenerator.class)
+            Transaction transaction) {
+        //given
+        assumeThat(transaction.balance, greaterThanOrEqualTo(0.0));
+        assumeThat(transaction.amount, allOf(greaterThan(0.0), greaterThan(transaction.balance)));
+
+        //when
+        final Account account = new Account(randomAlphanumeric(7), transaction.balance);
+        exception.expect(IllegalArgumentException.class);
+        account.deposit(transaction.amount);
+
+        //then
+        fail("should have never been here");
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void should_not_be_able_to_create_account_with_little_money(){
-        new Account("willbe7", 5.0);
-    }
+    @Theory
+    public void should_not_be_able_to_withdraw_more_than_balance(
+            @ForAll
+            @From(InvalidWithdrawalTransactionGenerator.class)
+            Transaction transaction) {
+        //given
+        assumeThat(transaction.balance, greaterThanOrEqualTo(0.0));
+        assumeThat(transaction.amount, allOf(greaterThan(0.0), greaterThan(transaction.balance)));
 
-    @Test(expected = IllegalArgumentException.class)
-    public void should_not_be_able_to_deposit_more_than_max(){
-        new Account("happy puppy", 6.0).deposit(100001.0);
-    }
+        //when
+        final Account account = new Account(randomAlphanumeric(7), transaction.balance);
+        exception.expect(IllegalArgumentException.class);
+        account.withdraw(transaction.amount);
 
-    @Test(expected = IllegalArgumentException.class)
-    public void should_not_be_able_to_deposit_equal_to_max(){
-        new Account("happy puppy", 6.0).deposit(100000.0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void should_not_be_able_to_withdraw_more_than_balance(){
-        final Account account = new Account("happy puppy", 9.0);
-        account.withdraw(10.0);
+        //then
+        fail("should have never been here");
     }
 
     @Theory
     public void should_be_able_to_deposit_less_than_max(
-            @ForAll @From(DepositTransactionGenerator.class) Transaction transaction) {
+            @ForAll
+            @From(DepositTransactionGenerator.class)
+            Transaction transaction) {
         //given
         assumeThat(transaction.balance, greaterThanOrEqualTo(0.0));
         assumeThat(transaction.amount, allOf(greaterThan(0.0), lessThanOrEqualTo(transaction.balance)));
@@ -77,7 +127,10 @@ public class QuickCheckAccountTest {
     }
 
     @Theory
-    public void should_be_able_to_withdraw_the_balance(@ForAll @From(BalanceGenerator.class) double balance) {
+    public void should_be_able_to_withdraw_the_balance(
+            @ForAll
+            @From(BalanceGenerator.class)
+            double balance) {
         //given
         assumeThat(balance, greaterThanOrEqualTo(0.0));
 
@@ -92,7 +145,8 @@ public class QuickCheckAccountTest {
 
     @Theory
     public void should_be_able_to_withdraw_less_than_balance(
-            @ForAll @From(WithdrawalTransactionGenerator.class) Transaction transaction) {
+            @ForAll @From(WithdrawalTransactionGenerator.class)
+            Transaction transaction) {
         //given
         assumeThat(transaction.balance, greaterThanOrEqualTo(0.0));
         assumeThat(transaction.amount, allOf(greaterThan(0.0), lessThanOrEqualTo(transaction.balance)));
@@ -143,6 +197,19 @@ public class QuickCheckAccountTest {
         }
     }
 
+    public static class InvalidWithdrawalTransactionGenerator extends Generator<Transaction> {
+        public InvalidWithdrawalTransactionGenerator() {
+            super(Transaction.class);
+        }
+
+        @Override
+        public Transaction generate(final SourceOfRandomness sourceOfRandomness, final GenerationStatus generationStatus) {
+            final double initialBalance = sourceOfRandomness.nextDouble(1, Double.MAX_VALUE - 1000);
+            final double  withdrawalAmount = sourceOfRandomness.nextDouble(initialBalance + 0.01, Double.MAX_VALUE);
+            return new Transaction(initialBalance, withdrawalAmount, Transaction.Type.WITHDRAWAL);
+        }
+    }
+
     public static class DepositTransactionGenerator extends Generator<Transaction> {
         public DepositTransactionGenerator() {
             super(Transaction.class);
@@ -156,6 +223,19 @@ public class QuickCheckAccountTest {
         }
     }
 
+    public static class InvalidDepositTransactionGenerator extends Generator<Transaction> {
+        public InvalidDepositTransactionGenerator() {
+            super(Transaction.class);
+        }
+
+        @Override
+        public Transaction generate(final SourceOfRandomness sourceOfRandomness, final GenerationStatus generationStatus) {
+            final double balance = sourceOfRandomness.nextDouble(0.0, Double.MAX_VALUE);
+            final double  depositAmount = sourceOfRandomness.nextDouble(100000, Double.MAX_VALUE);
+            return new Transaction(balance, depositAmount, Transaction.Type.DEPOSIT);
+        }
+    }
+
     public static class BalanceGenerator extends Generator<Double> {
         public BalanceGenerator() {
             super(Double.class);
@@ -164,6 +244,50 @@ public class QuickCheckAccountTest {
         @Override
         public Double generate(final SourceOfRandomness sourceOfRandomness, final GenerationStatus generationStatus) {
             return sourceOfRandomness.nextDouble(5.0, Double.MAX_VALUE);
+        }
+    }
+
+    public static class InvalidBalanceGenerator extends Generator<Double> {
+        public InvalidBalanceGenerator() {
+            super(Double.class);
+        }
+
+        @Override
+        public Double generate(final SourceOfRandomness sourceOfRandomness, final GenerationStatus generationStatus) {
+            return sourceOfRandomness.nextDouble(0.0, 5.0);
+        }
+    }
+
+    public static class UsernameGenerator extends Generator<String> {
+        public UsernameGenerator() {
+            super(String.class);
+        }
+
+        @Override
+        public String generate(final SourceOfRandomness sourceOfRandomness, final GenerationStatus generationStatus) {
+            return randomAlphanumeric(sourceOfRandomness.nextInt(7, 200));
+        }
+    }
+
+    public static class InvalidUsernameGenerator extends Generator<String> {
+        private boolean haveReturnedNull = false;
+        private boolean haveReturnedEmpty = false;
+
+        public InvalidUsernameGenerator() {
+            super(String.class);
+        }
+
+        @Override
+        public String generate(final SourceOfRandomness sourceOfRandomness, final GenerationStatus generationStatus) {
+            if(!haveReturnedNull){
+                haveReturnedNull = true;
+                return null;
+            }
+            if(!haveReturnedEmpty){
+                haveReturnedEmpty = true;
+                return "";
+            }
+            return randomAlphanumeric(sourceOfRandomness.nextInt(0, 7));
         }
     }
 
