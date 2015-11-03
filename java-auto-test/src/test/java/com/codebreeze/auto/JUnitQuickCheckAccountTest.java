@@ -19,8 +19,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
 
+/*
+ * https://github.com/pholser/junit-quickcheck
+ * https://bitbucket.org/blob79/quickcheck
+ */
 @RunWith(Theories.class)
-public class QuickCheckAccountTest {
+public class JUnitQuickCheckAccountTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
@@ -290,6 +294,4 @@ public class QuickCheckAccountTest {
             return randomAlphanumeric(sourceOfRandomness.nextInt(0, 7));
         }
     }
-
-
 }
